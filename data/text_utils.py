@@ -1,8 +1,19 @@
 import codecs
-from spacy.en import English
+import spacy
+from tqdm import tqdm
 
 
-parser = English()
+parser = spacy.load('en')
+
+
+def load_analyzed_dataset(data_dir, tags_file):
+    documents, tags = read_dataset(data_dir, tags_file)
+
+    analyzed_documents = []
+    for document in tqdm(documents, total=len(documents)):
+        analyzed_documents.append(analyze_document(document))
+
+    return analyzed_documents, tags
 
 
 def read_dataset(data_dir, tags_file):
@@ -42,6 +53,14 @@ def read_document(document_file):
     return document
 
 
+def analyze_document(document):
+    analyzed_document = []
+    for doc in parser.pipe(document, n_threads=16, batch_size=10000):
+        analyzed_document.append(doc)
+
+    return analyzed_document
+
+
 def tokenize_and_lemmatize(document, lemmatize=False):
 
     tokenized_document = []
@@ -62,9 +81,12 @@ def tokenize_and_lemmatize(document, lemmatize=False):
 
         tokenized_document.append(tokenized_paragraph)
 
+    # document format
+    # (paragraphs, sentences, tokens)
+
     return tokenized_document
 
 
 if __name__ == '__main__':
-    documents, tags = read_dataset('satire/test', 'satire/test-class')
-    print tokenize_and_lemmatize(documents[1])
+    documents, tags = load_analyzed_dataset('satire/test', 'satire/test-class')
+    print documents[:3]
