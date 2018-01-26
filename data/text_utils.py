@@ -11,7 +11,10 @@ def load_analyzed_dataset(data_dir, tags_file):
 
     analyzed_documents = []
     for document in tqdm(documents, total=len(documents)):
-        analyzed_documents.append(analyze_document(document))
+        analyzed_document = []
+        for sentence in parser.pipe(document, n_threads=16, batch_size=10000):
+            analyzed_document.append(sentence)
+        analyzed_documents.append(analyzed_document)
 
     return analyzed_documents, tags
 
@@ -42,23 +45,12 @@ def read_tags(tags_file):
 def read_document(document_file):
     document = []
     with codecs.open(document_file, 'r', encoding='ISO-8859-1') as f:
-        paragraph = []
         for line in f:
-            if line == u'\n':
-                document.append(" ".join(paragraph))
-                paragraph = []
-            else:
-                paragraph.append(line.strip())
+            document.append(line.strip())
+
+    document = filter(lambda x: x != u'', document)
 
     return document
-
-
-def analyze_document(document):
-    analyzed_document = []
-    for doc in parser.pipe(document, n_threads=16, batch_size=10000):
-        analyzed_document.append(doc)
-
-    return analyzed_document
 
 
 def tokenize_and_lemmatize(document, lemmatize=False):
@@ -90,3 +82,7 @@ def tokenize_and_lemmatize(document, lemmatize=False):
 if __name__ == '__main__':
     documents, tags = load_analyzed_dataset('satire/test', 'satire/test-class')
     print documents[:3]
+
+    # document = read_document('satire/test/test-0001')
+
+    # print document
