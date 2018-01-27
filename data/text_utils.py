@@ -1,22 +1,24 @@
 import codecs
-import spacy
-from tqdm import tqdm
+import nltk
+import re
 
 
-parser = spacy.load('en')
-
-
-def load_analyzed_dataset(data_dir, tags_file):
+def load_tokenized_dataset(data_dir, tags_file):
     documents, tags = read_dataset(data_dir, tags_file)
 
-    analyzed_documents = []
-    for document in tqdm(documents, total=len(documents)):
-        analyzed_document = []
-        for sentence in parser.pipe(document, n_threads=16, batch_size=10000):
-            analyzed_document.append(sentence)
-        analyzed_documents.append(analyzed_document)
+    tokenized_documents = recursive_map(documents, nltk.word_tokenize)
 
-    return analyzed_documents, tags
+    return tokenized_documents, tags
+
+
+def replace_numeric_tokens(documents):
+    def replace_numeric(token, replace=u'__numeric__'):
+        if re.match(r"[-+]?\d*\.\d+|\d+|[-+]?\d*,\d+", token):
+            return replace
+        else:
+            return token
+
+    return recursive_map(documents, replace_numeric)
 
 
 def read_dataset(data_dir, tags_file):
@@ -53,36 +55,13 @@ def read_document(document_file):
     return document
 
 
-def tokenize_and_lemmatize(document, lemmatize=False):
-
-    tokenized_document = []
-    for paragraph in document:
-        # get the tokens using spaCy
-        parsed_doc = parser(paragraph)
-
-        tokenized_paragraph = []
-        for sent in parsed_doc.sents:
-            if lemmatize:
-                # lemmatize
-                lemmas = []
-                for token in sent:
-                    lemmas.append(token.lemma_.lower().strip())
-                tokenized_paragraph.append(lemmas)
-            else:
-                tokenized_paragraph.append(list(sent))
-
-        tokenized_document.append(tokenized_paragraph)
-
-    # document format
-    # (paragraphs, sentences, tokens)
-
-    return tokenized_document
+def recursive_map(l, f, dtype=list):
+    if isinstance(l, dtype):
+        return map(lambda x: recursive_map(x, f), l)
+    return f(l)
 
 
 if __name__ == '__main__':
-    documents, tags = load_analyzed_dataset('satire/test', 'satire/test-class')
+    documents, tags = load_tokenized_dataset('satire/dbg', 'satire/dbg-class')
+    documents = replace_numeric_tokens(documents)
     print documents[:3]
-
-    # document = read_document('satire/test/test-0001')
-
-    # print document
