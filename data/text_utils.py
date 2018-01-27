@@ -1,6 +1,7 @@
 import codecs
 import nltk
 import re
+from features import SPECIAL_TOKENS
 
 
 def load_tokenized_dataset(data_dir, tags_file):
@@ -12,7 +13,7 @@ def load_tokenized_dataset(data_dir, tags_file):
 
 
 def replace_numeric_tokens(documents):
-    def replace_numeric(token, replace=u'__numeric__'):
+    def replace_numeric(token, replace=SPECIAL_TOKENS['numeric']):
         if re.match(r"[-+]?\d*\.\d+|\d+|[-+]?\d*,\d+", token):
             return replace
         else:
