@@ -2,7 +2,7 @@ import sys
 import argparse
 import numpy as np
 from data.text_utils import load_tokenized_dataset, replace_numeric_tokens, lemmatize
-from data.features import bag_of_words, get_vocabulary
+from data.features import bag_of_words, get_vocabulary, flatten_bow, tfidf
 from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
@@ -36,13 +36,18 @@ def argument_parser():
                         type=str,
                         required=True)
 
+    parser.add_argument('--tfidf',
+                        help='use tf-idf features',
+                        default=False,
+                        action='store_true')
+
     args = parser.parse_args(sys.argv[1:])
 
     return args
 
 
 def load_data(dir_train, file_class_train, dir_test,
-              file_class_test, lemmatization=False):
+              file_class_test, lemmatization=False, use_tfidf=False):
 
     # Load
     print "Loading Data"
@@ -72,16 +77,11 @@ def load_data(dir_train, file_class_train, dir_test,
     X_test = flatten_bow(docs_bow_test)
     y_test = np.array(map(lambda x: 1. if x == 'satire' else 0., tags_test))
 
+    if use_tfidf:
+        X = tfidf(X)
+        X_test = tfidf(X_test)
+
     return X, y, X_test, y_test
-
-
-def flatten_bow(documents_bow):
-
-    flattened_bow = []
-    for doc in documents_bow:
-        flattened_bow.append(np.sum(doc, axis=0))
-
-    return np.stack(flattened_bow)
 
 
 def print_results(y_true, y_pred):
@@ -140,7 +140,8 @@ if __name__ == '__main__':
         args.train_class,
         args.test_dir,
         args.test_class,
-        lemmatization=True
+        lemmatization=True,
+        use_tfidf=args.tfidf
     )
 
     # Naive Bayes
