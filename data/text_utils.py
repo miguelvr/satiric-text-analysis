@@ -22,6 +22,11 @@ def replace_numeric_tokens(documents):
     return recursive_map(documents, replace_numeric)
 
 
+def lemmatize(documents):
+    lemmatizer = nltk.stem.WordNetLemmatizer()
+    return recursive_map(documents, lemmatizer.lemmatize)
+
+
 def read_dataset(data_dir, tags_file):
 
     valid_file_names, tags = read_tags(tags_file)
