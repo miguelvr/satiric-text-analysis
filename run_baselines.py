@@ -1,3 +1,5 @@
+import sys
+import argparse
 import numpy as np
 from data.text_utils import load_tokenized_dataset, replace_numeric_tokens, lemmatize
 from data.features import bag_of_words, get_vocabulary
@@ -5,6 +7,38 @@ from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import classification_report, accuracy_score, f1_score
+
+
+def argument_parser():
+    # ARGUMENT HANDLING
+
+    parser = argparse.ArgumentParser(
+        prog='Run baseline models'
+    )
+
+    parser.add_argument('--train-dir',
+                        help='train directory path',
+                        type=str,
+                        required=True)
+
+    parser.add_argument('--train-class',
+                        help='train class file path',
+                        type=str,
+                        required=True)
+
+    parser.add_argument('--test-dir',
+                        help='test directory path',
+                        type=str,
+                        required=True)
+
+    parser.add_argument('--test-class',
+                        help='test class file path',
+                        type=str,
+                        required=True)
+
+    args = parser.parse_args(sys.argv[1:])
+
+    return args
 
 
 def load_data(dir_train, file_class_train, dir_test,
@@ -99,11 +133,13 @@ def naive_bayes(x, y, x_test):
 
 if __name__ == '__main__':
 
+    args = argument_parser()
+
     X_train, y_train, X_test, y_test = load_data(
-        'satire/training',
-        'satire/training-class',
-        'satire/test',
-        'satire/test-class',
+        args.train_dir,
+        args.train_class,
+        args.test_dir,
+        args.test_class,
         lemmatization=True
     )
 
