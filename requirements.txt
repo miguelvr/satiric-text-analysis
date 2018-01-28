@@ -1,4 +1,6 @@
+torch
 numpy
 scipy
 nltk
 scikit-learn
+pyyaml
