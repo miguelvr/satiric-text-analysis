@@ -1,13 +1,7 @@
 import numpy as np
 from collections import Counter, defaultdict
 import text_utils
-
-
-SPECIAL_TOKENS = {
-    'unknown': '__unknown__',
-    'numeric': '__numeric__',
-    'padding': '__pad__'
-}
+from __init__ import SPECIAL_TOKENS
 
 
 def get_vocabulary(tokenized_documents):
@@ -19,8 +13,34 @@ def get_vocabulary(tokenized_documents):
     return sorted(list(set(word_counter.keys()) | set(SPECIAL_TOKENS.values()))), word_counter
 
 
-def bag_of_words(tokenized_documents, vocabulary, tfidf=False):
+def fit_vocabulary_to_embedding(vocabulary, embedding_words, embedding_vectors):
+    embedding_indexer = {word: idx for idx, word in enumerate(embedding_words)}
+    new_vocabulary = sorted(list(set(vocabulary) & set(embedding_words)))
+    new_embedding = np.zeros((len(new_vocabulary), embedding_vectors.shape[1]))
+    for i, word in enumerate(vocabulary):
+        if word in embedding_words:
+            new_embedding[i, :] = embedding_vectors[embedding_indexer[word], :]
 
+    return new_vocabulary, new_embedding
+
+
+def load_fasttext_embedding(fasttext_file):
+    fasttext_words = []
+    with open(fasttext_file, 'r') as f:
+        for i, line in enumerate(f):
+            if i == 0:
+                fasttext_vocab_size, fasttext_dim = map(int, line.strip().split(' '))
+                fasttext_embeddings = np.zeros((fasttext_vocab_size, fasttext_dim))
+                continue
+            splitLine = line.split(' ')
+            word = splitLine[0]
+            embedding = np.fromstring(" ".join(splitLine[1:]), dtype=float, sep=' ')
+            fasttext_embeddings[i, :] = embedding
+            fasttext_words.append(word)
+    return fasttext_words, fasttext_embeddings
+
+
+def bag_of_words(tokenized_documents, vocabulary):
     indexer = get_indexer(vocabulary)
     documents_indices = text_utils.recursive_map(tokenized_documents, lambda x: indexer[x])
 
@@ -33,17 +53,10 @@ def bag_of_words(tokenized_documents, vocabulary, tfidf=False):
             bow[i, np.array(sent_indices, dtype=int)] += 1.0
         documents_bow.append(bow)
 
-    if tfidf:
-        idf = get_idf_mapper(tokenized_documents, vocabulary)
-        for doc in documents_bow:
-            for idx in range(doc.shape[1]):
-                doc[:, idx] *= idf[vocabulary[idx]]
-
     return documents_bow
 
 
 def flatten_bow(documents_bow):
-
     flattened_bow = []
     for doc in documents_bow:
         flattened_bow.append(np.sum(doc, axis=0))
@@ -68,15 +81,4 @@ def tfidf(flattened_bow):
 
 
 if __name__ == '__main__':
-
-    from data.text_utils import load_tokenized_dataset, replace_numeric_tokens
-
-    documents, tags = load_tokenized_dataset('satire/dbg', 'satire/dbg-class')
-    documents = replace_numeric_tokens(documents)
-
-    vocab, wc = get_vocabulary(documents)
-
-    docs_bow = bag_of_words(documents, vocab)
-    docs_bow = flatten_bow(docs_bow)
-
-    print ""
+    load_fasttext_embedding('satire/wiki-news-300d-1M.vec')

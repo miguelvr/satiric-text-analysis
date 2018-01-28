@@ -1,7 +1,7 @@
 import codecs
 import nltk
 import re
-from features import SPECIAL_TOKENS
+from __init__ import SPECIAL_TOKENS
 
 
 def load_tokenized_dataset(data_dir, tags_file):

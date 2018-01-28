@@ -3,7 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.template import ModelTemplate
 from models.custom_layers import Embedding
-from data.features import get_indexer, get_vocabulary, SPECIAL_TOKENS
+from data import SPECIAL_TOKENS
+from data.features import get_indexer, get_vocabulary
 
 
 class DocumentClassifier(ModelTemplate):
