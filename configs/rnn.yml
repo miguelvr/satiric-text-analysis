@@ -1,0 +1,6 @@
+gpu_device: 3
+model_folder: 'tmp'
+embedding_size: 64
+hidden_size: 100
+batch_size: 64
+epochs: 30

@@ -98,9 +98,10 @@ class ClassificationLogger(object):
         epoch_time = (time.time() - self.init_time)
 
         # Inform user
+        # FIXME: Needs improvement
         print("Epoch %d |" % self.epoch),
         print(
-                "%s %s accuracy %2.3f |" %
+                "%s %s | accuracy %2.3f |" %
                 (
                     self.monitoring_metric,
                     color(self.metrics[self.monitoring_metric][-1], color_select),

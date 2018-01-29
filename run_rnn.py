@@ -1,107 +1,79 @@
 from __future__ import division
-import math
+import sys
+import argparse
+import yaml
 import numpy as np
-from data.text_utils import \
-    load_tokenized_dataset, replace_numeric_tokens, \
-    lemmatize, flatten_documents
+from data.text_utils import flatten_list
+from data.loading import load_split_data, get_batches
 from models.rnn import RNNClassifier
 from models.logger import ClassificationLogger
 from models.trainer import Trainer
+from models.utils import print_results
 
 
-def load_split_data(train_dir, train_class, test_dir, test_class, lemmatization=False):
-    train_data, train_tags = load_tokenized_dataset(train_dir, train_class)
-    train_data = replace_numeric_tokens(train_data)
-    train_data = flatten_documents(train_data)
+def argument_parser():
+    # ARGUMENT HANDLING
 
-    dev_test_data, dev_test_tags = load_tokenized_dataset(test_dir, test_class)
-    dev_test_data = replace_numeric_tokens(dev_test_data)
-    dev_test_data = flatten_documents(dev_test_data)
+    parser = argparse.ArgumentParser(
+        prog='Train and test an RNN model for satiric text analysis'
+    )
 
-    if lemmatization:
-        train_data = lemmatize(train_data)
-        dev_test_data = lemmatize(dev_test_data)
+    parser.add_argument('--train-dir',
+                        help='train directory path',
+                        type=str,
+                        required=True)
 
-    train = {'input': train_data, 'output': train_tags}
+    parser.add_argument('--train-class',
+                        help='train class file path',
+                        type=str,
+                        required=True)
 
-    dev_data = dev_test_data[:int(math.ceil(len(dev_test_data) / 2))]
-    dev_tags = dev_test_tags[:int(math.ceil(len(dev_test_tags) / 2))]
-    dev = {'input': dev_data, 'output': dev_tags}
+    parser.add_argument('--test-dir',
+                        help='test directory path',
+                        type=str,
+                        required=True)
 
-    test_data = dev_test_data[int(math.ceil(len(dev_test_data) / 2)):]
-    test_tags = dev_test_tags[int(math.ceil(len(dev_test_tags) / 2)):]
-    test = {'input': test_data, 'output': test_tags}
+    parser.add_argument('--test-class',
+                        help='test class file path',
+                        type=str,
+                        required=True)
 
-    datasets = {
-        'train': train,
-        'dev': dev,
-        'test': test
-    }
+    parser.add_argument('--model-config',
+                        help='model configuration path',
+                        type=str,
+                        required=True)
 
-    nr_samples = {
-        'train': len(train_data),
-        'dev': len(dev_data),
-        'test': len(test_data)
-    }
+    parser.add_argument('--model-folder',
+                        help='overloads model output folder config parameter',
+                        type=str)
 
-    return datasets, nr_samples
+    parser.add_argument('--cuda',
+                        help='overloads gpu_device config parameter',
+                        type=int)
 
+    args = parser.parse_args(sys.argv[1:])
 
-def get_batches(dset_dict, batch_size=1, model_features=None, no_output=False, raw_output=False):
-    nr_examples = len(dset_dict['input'])
-    if batch_size is None:
-        nr_batch = 1
-        batch_size = nr_examples
-    else:
-        nr_batch = int(math.ceil(nr_examples * 1. / batch_size))
-
-    data = []
-    # Ignore output when solicited
-    if no_output:
-        data_sides = ['input']
-    else:
-        data_sides = ['input', 'output']
-
-    for batch_n in range(nr_batch):
-
-        # Colect data for this batch
-        data_batch = {}
-        for side in data_sides:
-            data_batch[side] = dset_dict[side][batch_n * batch_size:(batch_n + 1) * batch_size]
-
-        # If feature extractors provided, return features instead
-        if model_features is not None:
-            feat_batch = model_features(**data_batch)
-        else:
-            feat_batch = data_batch
-
-        if not no_output:
-            if raw_output:
-                # keep output unextracted
-                feat_batch['output'] = map(lambda x: 1. if x == 'satire' else 0., data_batch['output'])
-
-        data.append(feat_batch)
-
-    return data
+    return args
 
 
 if __name__ == '__main__':
+    args = argument_parser()
+
+    config = yaml.load(open(args.model_config, 'r'))
+
+    if args.model_folder:
+        config['model_folder'] = args.model_folder
+
+    if args.cuda:
+        config['gpu_device'] = args.cuda
+
     print "Loading Data"
-    datasets, nr_samples = load_split_data('satire/dbg',
-                                           'satire/dbg-class',
-                                           'satire/dbg',
-                                           'satire/dbg-class')
+    datasets, nr_samples = load_split_data(args.train_dir,
+                                           args.train_class,
+                                           args.test_dir,
+                                           args.test_class)
 
     print "Building Model"
-    config = {
-        'model_folder': 'tmp',
-        'embedding_size': 64,
-        'hidden_size': 20,
-        'batch_size': 2,
-        'epochs': 10,
-
-    }
-
     model = RNNClassifier(config)
     model.initialize_features(data=datasets['train'])
     model.build_model()
@@ -118,7 +90,8 @@ if __name__ == '__main__':
 
     test_data = get_batches(datasets['test'],
                             batch_size=config['batch_size'],
-                            model_features=model.get_features)
+                            model_features=model.get_features,
+                            raw_output=True)
 
     print "Training Model"
     logger = ClassificationLogger(
@@ -131,3 +104,9 @@ if __name__ == '__main__':
     trainer.fit(train_data=train_data,
                 dev_data=dev_data,
                 epochs=config['epochs'])
+
+    # Test
+    predictions = flatten_list(trainer.test(test_data))
+    pred_tags = np.where(np.array(predictions) >= 0.5, 1., 0.)
+    gold_tags = np.array(flatten_list(map(lambda x: x['output'], test_data)))
+    print_results(gold_tags, pred_tags)

@@ -23,3 +23,10 @@ class Trainer(object):
             self.logger.update_on_epoch(predictions, gold)
             if self.logger.state == 'save':
                 self.model.save()
+
+    def test(self, test_data):
+        predictions = []
+        for batch in test_data:
+            predictions.append(self.model.predict(batch['input']))
+
+        return predictions
