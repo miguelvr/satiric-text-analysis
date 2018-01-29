@@ -1,30 +1,36 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
+import numpy as np
 from models.template import ModelTemplate
 from models.custom_layers import Embedding
 from data import SPECIAL_TOKENS
 from data.features import get_indexer, get_vocabulary
+from data.text_utils import recursive_map
 
 
 class DocumentClassifier(ModelTemplate):
     def __init__(self, config=None, model_folder=None):
         super(DocumentClassifier, self).__init__(config, model_folder)
-        self.is_built = False
-
         self.vocabulary = None
+        self.loss_fn = None
+        self.optimizer = None
+        self.is_built = False
 
     def initialize_features(self, data=None, model_folder=None):
         if data is not None:
+            data = data['input']
             # FIXME: Choose function accordingly with pretrained embs
-            self.vocabulary = get_vocabulary(data)
+            self.vocabulary, _ = get_vocabulary(data, flattened=True)
             self.indexer = get_indexer(self.vocabulary)
         elif model_folder is not None:
+            # FIXME
             raise NotImplementedError
         else:
             raise ValueError("Either data or model folder must be provided")
 
-        self.build_model()
+        self.initialized = True
 
     def build_model(self):
         pass
@@ -33,13 +39,50 @@ class DocumentClassifier(ModelTemplate):
         pass
 
     def update(self, input, output):
-        pass
+        self.train()
 
-    def predict(self, input, output):
-        pass
+        input = Variable(input)
+        tags = Variable(output)
 
-    def get_features(self):
-        pass
+        if self.gpu_device is not None:
+            input = input.cuda()
+            tags = tags.cuda()
+
+        self.optimizer.zero_grad()  # Initialize Gradients to Zero
+        out = self.forward(input)  # Forward Pass
+        loss = self.loss_fn(out, tags)  # Compute Loss
+        loss.backward()  # Backward Pass
+        self.optimizer.step()  # optimizer Step
+
+        return loss.data[0]
+
+    def predict(self, input):
+        self.eval()
+
+        input = Variable(input)
+
+        if self.gpu_device is not None:
+            input = input.cuda()
+
+        out = self.forward(input)  # Forward Pass
+        scores = torch.exp(out).data.cpu().numpy()[:, 1]
+
+        return scores
+
+    def get_features(self, input=None, output=None):
+        input = recursive_map(input, lambda x: self.indexer[x])
+        max_length = max(map(len, input))
+        padded_input = np.full((len(input), max_length), self.indexer[SPECIAL_TOKENS['padding']])
+        for i, sent in enumerate(input):
+            padded_input[i, :len(sent)] = np.array(sent)
+
+        output = np.array(map(lambda x: 1. if x == 'satire' else 0., output))
+
+        # Cast to torch tensors
+        padded_input = torch.from_numpy(padded_input).long()
+        output = torch.from_numpy(output).long()
+
+        return {'input': padded_input, 'output': output}
 
 
 class RNNClassifier(DocumentClassifier):
@@ -67,9 +110,12 @@ class RNNClassifier(DocumentClassifier):
         self.linear_out = None
 
     def build_model(self):
+        assert self.initialized, \
+            "initialize_features() must be called before build_model()"
 
         # TODO: load pretrained embedding
 
+        # Layers
         self.embedding = Embedding(len(self.vocabulary), self.embedding_size,
                                    padding_idx=self.indexer[SPECIAL_TOKENS['padding']])
         self.rnn = nn.LSTM(
@@ -85,30 +131,37 @@ class RNNClassifier(DocumentClassifier):
         else:
             self.linear_out = nn.Linear(self.hidden_size, 2)
 
+        # Loss and optimizer
+        self.loss_fn = nn.NLLLoss()
+        self.optimizer = torch.optim.Adam(self.parameters())
+
+        # Set model to a specific gpu device
+        if self.gpu_device is not None:
+            torch.cuda.set_device(self.gpu_device)
+            self.cuda()
+
         self.is_built = True
 
     def forward(self, x):
-        assert self.is_built, "build_model() must be called before forward pass"
+        assert self.is_built, \
+            "initialize_features() must be called before forward pass"
 
-        # (sents, words) -> (sents, words, emb)
+        # (batch, words) -> (batch, words, emb)
         h = self.embedding(x)
 
-        # (sent, words, emb) -> (sent, words, hidden_size * num_directions)
+        # (batch, words, emb) -> (batch, words, hidden_size * num_directions)
         h, _ = self.rnn(h)
 
-        # (1, hidden_size * num_directions)
-        h = h.sum(1, keepdim=False).sum(0)
+        # (batch, hidden_size * num_directions)
+        h = h.sum(1, keepdim=False)
 
-        # (1, hidden_size * num_directions) -> (1, 2)
+        # (batch, hidden_size * num_directions) -> (batch, 2)
         h = F.log_softmax(self.linear_out(h), dim=-1)
 
         return h
 
 
 if __name__ == '__main__':
-
-    import numpy as np
-    from torch.autograd import Variable
 
     x = Variable(torch.from_numpy(np.random.randint(10, size=(50, 10))).long())
 

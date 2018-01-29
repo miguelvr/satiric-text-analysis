@@ -4,5 +4,4 @@ scipy
 nltk
 scikit-learn
 pyyaml
-Cython
-fasttext
+tqdm

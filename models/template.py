@@ -58,7 +58,7 @@ class ModelTemplate(nn.Module):
         pass
 
     @abstractmethod
-    def predict(self, input, output):
+    def predict(self, input):
         pass
 
     @abstractmethod

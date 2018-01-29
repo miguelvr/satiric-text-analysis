@@ -4,11 +4,15 @@ import text_utils
 from __init__ import SPECIAL_TOKENS
 
 
-def get_vocabulary(tokenized_documents):
+def get_vocabulary(tokenized_documents, flattened=False):
     word_counter = Counter()
-    for document in tokenized_documents:
-        for sentence in document:
-            word_counter.update(sentence)
+    if flattened:
+        for document in tokenized_documents:
+            word_counter.update(document)
+    else:
+        for document in tokenized_documents:
+            for sentence in document:
+                word_counter.update(sentence)
 
     return sorted(list(set(word_counter.keys()) | set(SPECIAL_TOKENS.values()))), word_counter
 

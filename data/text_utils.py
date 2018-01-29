@@ -12,6 +12,15 @@ def load_tokenized_dataset(data_dir, tags_file):
     return tokenized_documents, tags
 
 
+def flatten_documents(documents):
+    """Flattens the document structure
+    (documents, sentences, tokens) -> (documents, sentences * tokens)"""
+    flattened = []
+    for document in documents:
+        flattened.append([token for sentence in document for token in sentence])
+    return flattened
+
+
 def replace_numeric_tokens(documents):
     def replace_numeric(token, replace=SPECIAL_TOKENS['numeric']):
         if re.match(r"[-+]?\d*\.\d+|\d+|[-+]?\d*,\d+", token):
