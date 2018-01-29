@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
+from collections import Counter
 import numpy as np
 from models.template import ModelTemplate
 from models.custom_layers import Embedding
@@ -20,9 +21,8 @@ class DocumentClassifier(ModelTemplate):
 
     def initialize_features(self, data=None, model_folder=None):
         if data is not None:
-            data = data['input']
             # FIXME: Choose function accordingly with pretrained embs
-            self.vocabulary, _ = get_vocabulary(data, flattened=True)
+            self.vocabulary, _ = get_vocabulary(data['input'], flattened=True)
             self.indexer = get_indexer(self.vocabulary)
         elif model_folder is not None:
             # FIXME
@@ -132,7 +132,11 @@ class RNNClassifier(DocumentClassifier):
             self.linear_out = nn.Linear(self.hidden_size, 2)
 
         # Loss and optimizer
-        self.loss_fn = nn.NLLLoss()
+        balancing_weight = None
+        if 'balancing_weight' in self.config:
+            balancing_weight = torch.FloatTensor([1., self.config['balancing_weight']])
+
+        self.loss_fn = nn.NLLLoss(weight=balancing_weight)
         self.optimizer = torch.optim.Adam(self.parameters())
 
         # Set model to a specific gpu device

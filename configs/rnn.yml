@@ -3,4 +3,5 @@ model_folder: 'tmp'
 embedding_size: 64
 hidden_size: 100
 batch_size: 64
+balancing_weight: 5
 epochs: 30
