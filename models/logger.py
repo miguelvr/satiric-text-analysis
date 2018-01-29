@@ -1,8 +1,10 @@
+from __future__ import division
 import time
 import numpy as np
 from itertools import chain
 from tqdm import tqdm
 from sklearn.metrics import f1_score, accuracy_score
+from data.text_utils import flatten_list
 
 
 def color(x, color_select):
@@ -37,7 +39,7 @@ class ClassificationLogger(object):
         self.b_size = batch_size
 
         if self.b_size:
-            self.n_batches = int(np.round(self.n_samples / self.b_size))
+            self.n_batches = int(np.ceil(self.n_samples / self.b_size))
         else:
             self.n_batches = 1
 
@@ -70,15 +72,17 @@ class ClassificationLogger(object):
             self.pbar.close()
             self.batch_idx = 0
 
+        gold_tags = np.array(flatten_list(gold))
+        pred_tags = np.where(np.array(flatten_list(predictions)) >= 0.5, 1., 0.)
+
         if 'f1_product' in self.metrics:
-            f1 = f1_score(gold, predictions, average=None)
+            f1 = f1_score(gold_tags, pred_tags, average=None)
             metric_score = f1[0] * f1[1]
             self.metrics['f1_product'].append(metric_score)
-        elif 'accuracy' in self.metrics:
-            metric_score = accuracy_score(gold, predictions)
+
+        if 'accuracy' in self.metrics:
+            metric_score = accuracy_score(gold_tags, pred_tags)
             self.metrics['accuracy'].append(metric_score)
-        else:
-            raise Exception("Invalid monitoring metric")
 
         # Update state
         self.state = None

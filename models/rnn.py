@@ -65,7 +65,7 @@ class DocumentClassifier(ModelTemplate):
             input = input.cuda()
 
         out = self.forward(input)  # Forward Pass
-        scores = torch.exp(out).data.cpu().numpy()[:, 1]
+        scores = torch.exp(out).data.cpu().numpy()[:, 1].tolist()
 
         return scores
 

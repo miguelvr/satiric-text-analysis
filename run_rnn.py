@@ -1,5 +1,6 @@
 from __future__ import division
 import math
+import numpy as np
 from data.text_utils import \
     load_tokenized_dataset, replace_numeric_tokens, \
     lemmatize, flatten_documents
@@ -46,7 +47,7 @@ def load_split_data(train_dir, train_class, test_dir, test_class, lemmatization=
     return datasets, nr_samples
 
 
-def get_batches(dset_dict, batch_size=1, model_features=None, no_output=False):
+def get_batches(dset_dict, batch_size=1, model_features=None, no_output=False, raw_output=False):
     nr_examples = len(dset_dict['input'])
     if batch_size is None:
         nr_batch = 1
@@ -73,6 +74,11 @@ def get_batches(dset_dict, batch_size=1, model_features=None, no_output=False):
             feat_batch = model_features(**data_batch)
         else:
             feat_batch = data_batch
+
+        if not no_output:
+            if raw_output:
+                # keep output unextracted
+                feat_batch['output'] = map(lambda x: 1. if x == 'satire' else 0., data_batch['output'])
 
         data.append(feat_batch)
 
@@ -107,7 +113,8 @@ if __name__ == '__main__':
 
     dev_data = get_batches(datasets['dev'],
                            batch_size=config['batch_size'],
-                           model_features=model.get_features)
+                           model_features=model.get_features,
+                           raw_output=True)
 
     test_data = get_batches(datasets['test'],
                             batch_size=config['batch_size'],

@@ -1,6 +1,7 @@
 import codecs
 import nltk
 import re
+from itertools import chain
 from __init__ import SPECIAL_TOKENS
 
 
@@ -74,6 +75,13 @@ def recursive_map(l, f, dtype=list):
     if isinstance(l, dtype):
         return map(lambda x: recursive_map(x, f), l)
     return f(l)
+
+
+def flatten_list(items):
+    if isinstance(items[0], list):
+        return list(chain.from_iterable(items))
+    else:
+        return items
 
 
 if __name__ == '__main__':
