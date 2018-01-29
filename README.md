@@ -21,9 +21,11 @@ Coded with `sklearn` and `pytorch`.
 ### Run baseline models
 
 Download the data and unzip it into the repository:
- - [Download data here](https://people.eng.unimelb.edu.au/tbaldwin/resources/satire/)
 
-Example script:
+  - `bash download_data.sh`
+  - or download it from [here](https://people.eng.unimelb.edu.au/tbaldwin/resources/satire/)
+
+Baseline models script:
 
     python run_baselines.py \
       --train-dir satire/training \
