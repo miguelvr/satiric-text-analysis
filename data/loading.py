@@ -34,14 +34,22 @@ def load_bow_data(dir_train, file_class_train, dir_test,
 
     # Test
     docs_bow_test = bag_of_words(documents_test, vocabulary)
-    X_test = flatten_bow(docs_bow_test)
-    y_test = np.array(map(lambda x: 1. if x == 'satire' else 0., tags_test))
+    X_dev_test = flatten_bow(docs_bow_test)
+    y_dev_test = np.array(map(lambda x: 1. if x == 'satire' else 0., tags_test))
 
     if use_tfidf:
         X = tfidf(X)
-        X_test = tfidf(X_test)
+        X_dev_test = tfidf(X_dev_test)
 
-    return X, y, X_test, y_test
+    half = int(math.ceil(X_dev_test.shape[0] / 2))
+
+    X_dev = X_dev_test[:half, :]
+    y_dev = y_dev_test[:half]
+
+    X_test = X_dev_test[half:, :]
+    y_test = y_dev_test[half:]
+
+    return X, y, X_dev, y_dev, X_test, y_test
 
 
 def load_split_data(train_dir, train_class, test_dir, test_class, lemmatization=False):

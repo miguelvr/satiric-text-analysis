@@ -1,7 +1,9 @@
 gpu_device: 3
 model_folder: 'tmp'
 embedding_size: 64
-hidden_size: 100
+hidden_size: 50
+bidirectional: True
+num_layers: 1
+dropout: 0.2
 batch_size: 64
-balancing_weight: 5
 epochs: 30

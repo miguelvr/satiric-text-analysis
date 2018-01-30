@@ -34,7 +34,7 @@ def argument_parser():
                         type=str,
                         required=True)
 
-    parser.add_argument('--tfidf',
+    parser.add_argument('--use-tfidf',
                         help='use tf-idf features',
                         default=False,
                         action='store_true')
@@ -44,18 +44,19 @@ def argument_parser():
     return args
 
 
-def logistic_regression(x, y, x_test):
+def logistic_regression(x, y, x_dev, x_test):
 
     print "Training Logistic Regression"
     log_reg = LogisticRegression()
     log_reg.fit(x, y)
 
-    prediction = log_reg.predict(x_test)
+    pred_dev = log_reg.predict(x_dev)
+    pred_test = log_reg.predict(x_test)
 
-    return prediction
+    return pred_dev, pred_test
 
 
-def svc(x, y, x_test, balanced=False):
+def svc(x, y,  x_dev, x_test, balanced=False):
     print "Training SVM"
     if balanced:
         class_weight = 'balanced'
@@ -65,42 +66,48 @@ def svc(x, y, x_test, balanced=False):
     svm = SVC(class_weight=class_weight)
     svm.fit(x, y)
 
-    prediction = svm.predict(x_test)
+    pred_dev = svm.predict(x_dev)
+    pred_test = svm.predict(x_test)
 
-    return prediction
+    return pred_dev, pred_test
 
 
-def naive_bayes(x, y, x_test):
+def naive_bayes(x, y, x_dev, x_test):
     print "Training Naive Bayes"
     nb = GaussianNB()
     nb.fit(x, y)
 
-    prediction = nb.predict(x_test)
+    pred_dev = nb.predict(x_dev)
+    pred_test = nb.predict(x_test)
 
-    return prediction
+    return pred_dev, pred_test
 
 
 if __name__ == '__main__':
 
     args = argument_parser()
 
-    X_train, y_train, X_test, y_test = load_bow_data(
+    X_train, y_train, X_dev, \
+    y_dev, X_test, y_test = load_bow_data(
         args.train_dir,
         args.train_class,
         args.test_dir,
         args.test_class,
         lemmatization=True,
-        use_tfidf=args.tfidf
+        use_tfidf=args.use_tfidf
     )
 
     # Naive Bayes
-    nb_prediction = naive_bayes(X_train, y_train, X_test)
-    print_results(y_test, nb_prediction)
+    nb_dev, nb_test = naive_bayes(X_train, y_train, X_dev, X_test)
+    print_results(y_dev, nb_dev)
+    print_results(y_test, nb_test)
 
     # SVM
-    svm_prediction = svc(X_train, y_train, X_test, balanced=True)
-    print_results(y_test, svm_prediction)
+    svm_dev, svm_test = svc(X_train, y_train, X_dev, X_test, balanced=True)
+    print_results(y_dev, svm_dev)
+    print_results(y_test, svm_test)
 
     # Logistic Regression
-    log_reg_prediction = logistic_regression(X_train, y_train, X_test)
-    print_results(y_test, log_reg_prediction)
+    lr_dev, lr_test = logistic_regression(X_train, y_train, X_dev, X_test)
+    print_results(y_dev, lr_dev)
+    print_results(y_test, lr_test)
