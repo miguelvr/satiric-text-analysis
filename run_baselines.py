@@ -44,6 +44,15 @@ def argument_parser():
     return args
 
 
+def get_most_relavant_words(model, vocabulary):
+    most_relevant = sorted(zip(model.coef_[0, :].tolist(), range(len(vocabulary))), key=lambda pair: pair[0],
+                           reverse=True)
+
+    most_relevant = map(lambda x: (x[0], vocabulary[x[1]]), most_relevant)
+
+    return most_relevant
+
+
 def logistic_regression(x, y, x_dev, x_test):
 
     print "Training Logistic Regression"
@@ -53,7 +62,7 @@ def logistic_regression(x, y, x_dev, x_test):
     pred_dev = log_reg.predict(x_dev)
     pred_test = log_reg.predict(x_test)
 
-    return pred_dev, pred_test
+    return log_reg, pred_dev, pred_test
 
 
 def svc(x, y,  x_dev, x_test, balanced=False):
@@ -88,7 +97,7 @@ if __name__ == '__main__':
     args = argument_parser()
 
     X_train, y_train, X_dev, \
-    y_dev, X_test, y_test = load_bow_data(
+    y_dev, X_test, y_test, vocabulary = load_bow_data(
         args.train_dir,
         args.train_class,
         args.test_dir,
@@ -97,17 +106,19 @@ if __name__ == '__main__':
         use_tfidf=args.use_tfidf
     )
 
-    # Naive Bayes
-    nb_dev, nb_test = naive_bayes(X_train, y_train, X_dev, X_test)
-    print_results(y_dev, nb_dev)
-    print_results(y_test, nb_test)
-
-    # SVM
-    svm_dev, svm_test = svc(X_train, y_train, X_dev, X_test, balanced=True)
-    print_results(y_dev, svm_dev)
-    print_results(y_test, svm_test)
+    # # Naive Bayes
+    # nb_dev, nb_test = naive_bayes(X_train, y_train, X_dev, X_test)
+    # print_results(y_dev, nb_dev)
+    # print_results(y_test, nb_test)
+    #
+    # # SVM
+    # svm_dev, svm_test = svc(X_train, y_train, X_dev, X_test, balanced=True)
+    # print_results(y_dev, svm_dev)
+    # print_results(y_test, svm_test)
 
     # Logistic Regression
-    lr_dev, lr_test = logistic_regression(X_train, y_train, X_dev, X_test)
+    lr, lr_dev, lr_test = logistic_regression(X_train, y_train, X_dev, X_test)
     print_results(y_dev, lr_dev)
     print_results(y_test, lr_test)
+
+    print get_most_relavant_words(lr, vocabulary)[:10]

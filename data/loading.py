@@ -49,7 +49,7 @@ def load_bow_data(dir_train, file_class_train, dir_test,
     X_test = X_dev_test[half:, :]
     y_test = y_dev_test[half:]
 
-    return X, y, X_dev, y_dev, X_test, y_test
+    return X, y, X_dev, y_dev, X_test, y_test, vocabulary
 
 
 def load_split_data(train_dir, train_class, test_dir, test_class, lemmatization=False):
