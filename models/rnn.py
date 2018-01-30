@@ -2,12 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
-from collections import Counter
 import numpy as np
 from models.template import ModelTemplate
 from models.custom_layers import Embedding
 from data import SPECIAL_TOKENS
-from data.features import get_indexer, get_vocabulary
+from data.features import \
+    get_indexer, get_vocabulary, \
+    load_polyglot, fit_vocabulary_to_embedding
 from data.text_utils import recursive_map
 
 
@@ -15,14 +16,23 @@ class DocumentClassifier(ModelTemplate):
     def __init__(self, config=None, model_folder=None):
         super(DocumentClassifier, self).__init__(config, model_folder)
         self.vocabulary = None
+        self.pretrained_embeddings = None
         self.loss_fn = None
         self.optimizer = None
         self.is_built = False
 
     def initialize_features(self, data=None, model_folder=None):
         if data is not None:
-            # FIXME: Choose function accordingly with pretrained embs
             self.vocabulary, _ = get_vocabulary(data['input'], flattened=True)
+            if 'pretrained_embeddings' in self.config:
+                polyglot_words, polyglot_vectors = \
+                    load_polyglot(self.config['pretrained_embeddings'])
+                self.pretrained_embeddings = fit_vocabulary_to_embedding(
+                    self.vocabulary,
+                    polyglot_words,
+                    polyglot_vectors
+                )
+                self.pretrained_embeddings = torch.from_numpy(self.pretrained_embeddings).float()
             self.indexer = get_indexer(self.vocabulary)
         elif model_folder is not None:
             # FIXME
@@ -113,11 +123,14 @@ class RNNClassifier(DocumentClassifier):
         assert self.initialized, \
             "initialize_features() must be called before build_model()"
 
-        # TODO: load pretrained embedding
-
         # Layers
-        self.embedding = Embedding(len(self.vocabulary), self.embedding_size,
-                                   padding_idx=self.indexer[SPECIAL_TOKENS['padding']])
+        if self.pretrained_embeddings is not None:
+            self.embedding = Embedding(len(self.vocabulary), self.embedding_size,
+                                       padding_idx=self.indexer[SPECIAL_TOKENS['padding']],
+                                       pretrained=self.pretrained_embeddings)
+        else:
+            self.embedding = Embedding(len(self.vocabulary), self.embedding_size,
+                                       padding_idx=self.indexer[SPECIAL_TOKENS['padding']])
         self.rnn = nn.LSTM(
             self.embedding_size,
             self.hidden_size,
@@ -166,7 +179,6 @@ class RNNClassifier(DocumentClassifier):
 
 
 if __name__ == '__main__':
-
     x = Variable(torch.from_numpy(np.random.randint(10, size=(50, 10))).long())
 
     config = {

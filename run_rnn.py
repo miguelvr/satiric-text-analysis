@@ -105,6 +105,8 @@ if __name__ == '__main__':
                 dev_data=dev_data,
                 epochs=config['epochs'])
 
+    model.load('{}/{}.torch'.format(config['model_folder'], type(model).__name__.lower()))
+
     # Test
     predictions = flatten_list(trainer.test(test_data))
     pred_tags = np.where(np.array(predictions) >= 0.5, 1., 0.)

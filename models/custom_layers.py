@@ -16,7 +16,7 @@ class Embedding(nn.Embedding):
                                         norm_type, scale_grad_by_freq,
                                         sparse)
 
-        if pretrained:
+        if pretrained is not None:
             self.load_pretrained(pretrained)
 
     def load_pretrained(self, pretrained_embedding):

@@ -2,8 +2,9 @@ gpu_device: 3
 model_folder: 'tmp'
 embedding_size: 64
 hidden_size: 50
-bidirectional: True
+bidirectional: False
+pretrained_embeddings: 'satire/polyglot-en.pkl'
 num_layers: 1
-dropout: 0.2
+dropout: 0.
 batch_size: 64
 epochs: 30

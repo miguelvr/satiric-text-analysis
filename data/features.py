@@ -1,4 +1,5 @@
 import numpy as np
+import cPickle as pkl
 from collections import Counter, defaultdict
 import text_utils
 from __init__ import SPECIAL_TOKENS
@@ -19,16 +20,15 @@ def get_vocabulary(tokenized_documents, flattened=False):
 
 def fit_vocabulary_to_embedding(vocabulary, embedding_words, embedding_vectors):
     embedding_indexer = {word: idx for idx, word in enumerate(embedding_words)}
-    new_vocabulary = sorted(list(set(vocabulary) & set(embedding_words)))
-    new_embedding = np.zeros((len(new_vocabulary), embedding_vectors.shape[1]))
+    new_embedding = np.zeros((len(vocabulary), embedding_vectors.shape[1]))
     for i, word in enumerate(vocabulary):
         if word in embedding_words:
             new_embedding[i, :] = embedding_vectors[embedding_indexer[word], :]
 
-    return new_vocabulary, new_embedding
+    return new_embedding
 
 
-def load_fasttext_embedding(fasttext_file):
+def load_fasttext_embeddings(fasttext_file):
     fasttext_words = []
     with open(fasttext_file, 'r') as f:
         for i, line in enumerate(f):
@@ -42,6 +42,35 @@ def load_fasttext_embedding(fasttext_file):
             fasttext_embeddings[i, :] = embedding
             fasttext_words.append(word)
     return fasttext_words, fasttext_embeddings
+
+
+def load_polyglot(polyglot_format_file):
+    """
+    Loads the polyglot embeddings vectors and vocabulary,
+    mapping special tokens to our nomenclature
+
+    Args:
+        polyglot_format_file:   (string) file path
+
+    Returns:
+        polyglot_words:         list of words
+        polyglot_vectors:       numpy array
+
+    """
+
+    polyglot_words, polyglot_vectors = pkl.load(open(polyglot_format_file, 'r'))
+
+    polyglot_map = {
+        u'<UNK>': u'unknown',
+        u'<S>': u'sentence-start',
+        u'</S>': u'sentence-end',
+        u'<PAD>': u'padding'
+    }
+
+    polyglot_words = [SPECIAL_TOKENS[polyglot_map[word]]
+                      if word in polyglot_map else word for word in polyglot_words]
+
+    return polyglot_words, polyglot_vectors
 
 
 def bag_of_words(tokenized_documents, vocabulary):
@@ -83,6 +112,3 @@ def tfidf(flattened_bow):
     idf = 1. + (np.log(n_docs / doc_counts))
     return tf * idf
 
-
-if __name__ == '__main__':
-    load_fasttext_embedding('satire/wiki-news-300d-1M.vec')
