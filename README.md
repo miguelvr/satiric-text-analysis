@@ -60,13 +60,13 @@ detecting satire in a given document can be a very important task.
 In this project, we start by tackling the problem in the simplest way possible, 
 in order to have a baseline, to then start adding complexity to the problem.
 
-Satire detection can be viewed as a simple document natural language processing (NLP) 
+Satire detection can be viewed as a simple natural language processing (NLP) 
 classification task, and as such, it can be split into two distinct phases:
   1. Feature extraction
   2. Model selection
 
-In the next sections, we'll explain how we process the process in order to extract 
-representative features and the models used to achieve our goal.
+In the next sections, we'll explain how we process the data, in order to extract 
+representative features, and the models used to achieve our goal.
 
 ### Feature Extraction
 
