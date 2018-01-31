@@ -1,4 +1,4 @@
-# Satire Text Analysis
+# Satiric Text Analysis
 
 This repo aims to solve the problem of detection of satire in news documents.
 Different approaches are provided, ranging from simple models to more complex and deeper models.
@@ -112,11 +112,15 @@ The BoW representation treats every word equally, however, in most NLP applicati
 
 Using TF-IDF might not be the most helpful weighting scheme for satire classification, as the satiric cues may not be in single tokens but instead in the way the sentences are constructed. Nonetheless, we decided to give this popular weighting scheme a try.
 
-##### Word Embeddings
+##### Word Embeddings (Continuous Bag of Words)
 
-The previous representations will not be helpful when a model sees an unknown word, even if it has seen very similar words during training. To solve this problem, we need to capture the semantic meaning of words, meaning we need to understand that words like ‘good’ and ‘positive’ are closer than ‘peace’ and ‘war.’
+The previous representations will not be helpful when a model sees an unknown word, even if it has seen very similar words during training. To solve this problem, we need to capture the semantic meaning of words, meaning we need to understand that words like ‘good’ and ‘positive’ are closer than ‘peace’ and ‘war.’ With word embeddinds it is possible to go from a discrete space with one dimension per word to a continuous vector space with much lower dimension, where words similar words are closer to each other in the embedding space. Using word embeddings, we can represent our documents as a **continuous bag of words (CBoW)**, in which each document is the sum of muiti-dimensional vectors in the embedding space.
 
-**To be continued**
+There are several pretrained word embeddings with several million tokens, such as Word2Vec, GLoVe or FastText, which can be used with any model. For the purpose of this project, we used pretrained polyglot embeddings, which have a lower dimensionality that the ones refered previously, and perform relatively well.
+
+##### Other relevant features
+
+This is as far as we went as feature extraction. However, there are many other features that can be useful in the satire detection task, such as **N-grams** that would convey a temporal structure for simpler models, by grouping N tokens at a time, or linguistic features such as **part of speech tags**, that would help identifying writing styles related to satire and better define the role of each word in a sentence.
 
 ### Model Selection
 
