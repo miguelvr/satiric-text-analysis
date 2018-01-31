@@ -7,7 +7,7 @@ Coded with `sklearn` and `pytorch`.
 ### Requirements
 
  - Python 2.7
- - [PyTorch v3.0](http://pytorch.org)
+ - [PyTorch v0.3](http://pytorch.org)
  
 ### Installation
  
@@ -82,6 +82,7 @@ of numeric characters such as integers or floats and map them into a unique `__n
 Our final preprocessing step is lemmatization, being optional, but it is especially helpful for simpler models.
 Lemmatization consists in representing groups of words by the same token, 
 in a way similarly to what we have done with the numeric tokens. 
+To deal with unknown tokens during test time, we added a special `__unk__` token.
 
 Lemmatization example:
 
@@ -124,6 +125,26 @@ This is as far as we went as feature extraction. However, there are many other f
 
 ### Model Selection
 
+#### Baseline Models
+
+We start by trying the extracted features with some, very simple, classical machine learning models for classification tasks: Naive Bayes, Support Vector Machines (SVM) and Logistic Regression. Often, when small amounts of data are provided, simple models perform better than more complex models. 
+
+In a nutshell, Naive Bayes does counts over the data to estimate its priors and posterior probabilities to compute the likehood of a class given the data. SVM estimates a hyperplane that separates the different classes of data, in a kernel mapped hyperspace, by maximizing the margin of separation between points of different classes. Logistic regression binary classification can be interpreted as a non-linear regression problem, in which we map the data to approximate one of either of the classes `[0, 1]`. The closest the output of the logistic regression is to one of the boundary values imposed by the logistic function, the more confident that prediction is.
+
+For each one of the baseline models, we used the correspondant implementation in `scikit-learn`.
+
+#### Recurrent Neural Networks (RNN)
+
+Since a document is a sequence of paragraphs, that is a sequence of sentences, that is a sequence of tokens, using a model that takes into account temporal sequence makes a lot of sense. RNNs are models that are able to capture long term dependencies in data and therefore are a great fit for the task of satire detection.
+
+The implemented model consists of an embedding layer followed by multiple layers of unidirectional or bidirectional Long Short-Term Memory (LSTM) networks and ending in a linear layer with a Softmax activation. The model discards the paragraph and sentence structures of a document and deals with it as a sequence of tokens.
+
+The model is trained for about 30 epochs with GPU accelaration using an ADAM optimizer and a Negative Log Likelihood loss function with class weighting for the `satire` class.
+
+**Discuss the hyperparameters after picking the winning model**
+
 ### Results
 
 ### Conclusions
+
+### Future work
