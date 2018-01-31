@@ -3,7 +3,7 @@ import argparse
 from data.loading import load_bow_data
 from sklearn.linear_model.logistic import LogisticRegression
 from sklearn.svm import SVC
-from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
 from models.utils import print_results
 
 
@@ -36,6 +36,11 @@ def argument_parser():
 
     parser.add_argument('--use-tfidf',
                         help='use tf-idf features',
+                        default=False,
+                        action='store_true')
+
+    parser.add_argument('--use-lemma',
+                        help='use lemmatized features',
                         default=False,
                         action='store_true')
 
@@ -83,7 +88,7 @@ def svc(x, y,  x_dev, x_test, balanced=False):
 
 def naive_bayes(x, y, x_dev, x_test):
     print "Training Naive Bayes"
-    nb = GaussianNB()
+    nb = MultinomialNB()
     nb.fit(x, y)
 
     pred_dev = nb.predict(x_dev)
@@ -102,19 +107,19 @@ if __name__ == '__main__':
         args.train_class,
         args.test_dir,
         args.test_class,
-        lemmatization=True,
+        lemmatization=args.use_lemma,
         use_tfidf=args.use_tfidf
     )
 
-    # # Naive Bayes
-    # nb_dev, nb_test = naive_bayes(X_train, y_train, X_dev, X_test)
-    # print_results(y_dev, nb_dev)
-    # print_results(y_test, nb_test)
-    #
-    # # SVM
-    # svm_dev, svm_test = svc(X_train, y_train, X_dev, X_test, balanced=True)
-    # print_results(y_dev, svm_dev)
-    # print_results(y_test, svm_test)
+    # Naive Bayes
+    nb_dev, nb_test = naive_bayes(X_train, y_train, X_dev, X_test)
+    print_results(y_dev, nb_dev)
+    print_results(y_test, nb_test)
+
+    # SVM
+    svm_dev, svm_test = svc(X_train, y_train, X_dev, X_test, balanced=True)
+    print_results(y_dev, svm_dev)
+    print_results(y_test, svm_test)
 
     # Logistic Regression
     lr, lr_dev, lr_test = logistic_regression(X_train, y_train, X_dev, X_test)
