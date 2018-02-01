@@ -83,7 +83,7 @@ element in a string into a list of tokens. Aditionally, a regular expression is 
 of numeric characters such as integers or floats and map them into a unique `__numeric__` token. 
 The final preprocessing step is lemmatization, being optional, but is especially helpful 
 for simpler models in many NLP tasks. Lemmatization consists in representing groups of words by the same token, 
-in a way similarly to what is done with the numeric tokens. 
+in a similar way to what is done with the numeric tokens. 
 To deal with unknown tokens during test time, a special `__unk__` token is added.
 
 Lemmatization example:
@@ -116,7 +116,7 @@ Using TF-IDF might not be the most helpful weighting scheme for satire classific
 
 ##### Word Embeddings (Continuous Bag of Words)
 
-The previous representations will not be helpful when a model sees an unknown word, even if it has seen very similar words during training. To solve this problem, one needs to capture the semantic meaning of words, meaning we need to understand that words like ‘good’ and ‘positive’ are closer than ‘peace’ and ‘war.’ With word embeddinds it is possible to go from a discrete space with one dimension per word to a continuous vector space with much lower dimension, where words similar words are closer to each other in the embedding space. Using word embeddings, the documents can be represent as a **continuous bag of words (CBoW)**, in which each document is the sum of muiti-dimensional vectors in the embedding space.
+The previous representations will not be helpful when a model sees an unknown word, even if it has seen very similar words during training. To solve this problem, one needs to capture the semantic meaning of words, meaning we need to understand that words like ‘good’ and ‘positive’ are closer than ‘peace’ and ‘war.’ With word embeddinds it is possible to go from a discrete space with one dimension per word to a continuous vector space with much lower dimension, where similar words are closer to each other in the embedding space. Using word embeddings, the documents can be represented as a **continuous bag of words (CBoW)**, in which each document is the sum of muiti-dimensional vectors in the embedding space.
 
 There are several pretrained word embeddings with several million tokens, such as Word2Vec, GLoVe or FastText, which can be used with any model. For the purpose of this project, pretrained polyglot embeddings were used, because of their lower dimensionality relatively good performance.
 
