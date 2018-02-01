@@ -24,6 +24,8 @@ Download the data and unzip it into the repository:
 
   - `bash download_data.sh`
   - or download it from [here](https://people.eng.unimelb.edu.au/tbaldwin/resources/satire/)
+  
+Download pretrained polyglot word embeddings [here](http://bit.ly/19bSoAS) and copy it to the `satire` folder.
 
 Baseline models script (may take a couple of minutes):
 
