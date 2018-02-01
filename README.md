@@ -53,7 +53,9 @@ RNN model script (recommended use of GPU, otherwise it will take a few minutes):
 Satirical news are considered to be a form of entertainment. However, 
 if interpreted literally, it is potentially deceptive and harmful. 
 In the case the reader is not able to interpret the satirical cues of the document, 
-there is not much of a difference between satirical news and fake news. 
+there is not much of a difference between satirical news and fake news, 
+but it is a lot harder to compare the facts against a ground truth in 
+satire detection, as there is not necessarily a ground truth.
 Therefore, for applications such as automatic fact checking, 
 detecting satire in a given document can be a very important task.
 
@@ -130,21 +132,25 @@ To start with, the extracted features were plugged in some, very simple, classic
 
 In a nutshell, Naive Bayes does counts over the data to estimate its priors and posterior probabilities to compute the likehood of a class given the data. SVM estimates a hyperplane that separates the different classes of data, in a kernel mapped hyperspace, by maximizing the margin of separation between points of different classes. Logistic regression binary classification can be interpreted as a non-linear regression problem, in which we map the data to approximate one of either of the classes `[0, 1]`. The closest the output of the logistic regression is to one of the boundary values imposed by the logistic function, the more confident that prediction is.
 
-For each one of the baseline models, the correspondant implementation in `scikit-learn` was used.
+For each one of the baseline models, the correspondant implementations in `scikit-learn` were used (`MultinomialNB`, `SVC` and `LogisticRegression`).
 
 #### Recurrent Neural Networks (RNN)
 
 Since a document is a sequence of paragraphs, which is a sequence of sentences, which is a sequence of tokens, using a model that takes into account temporal sequence makes a lot of sense. RNNs are models that are able to capture long term dependencies in data and therefore are a great fit for the task of satire detection.
 
-The implemented model consists of an embedding layer followed by multiple layers of unidirectional or bidirectional Long Short-Term Memory (LSTM) networks and ending in a linear layer with a Softmax activation. The model discards the paragraph and sentence structures of a document and deals with it as a sequence of tokens.
+The implemented model consists of an embedding layer followed by multiple layers of unidirectional or bidirectional Long Short-Term Memory (LSTM) networks and ending in a linear layer with a Softmax activation. The model discards the paragraph and sentence structures of a document and deals with it as a sequence of tokens. The Embeddings size is 64 (same as polyglot) and the LSTM hidden 
 
 The model is trained for about 30 epochs with GPU accelaration using an ADAM optimizer and a Negative Log Likelihood loss function with class weighting for the `satire` class.
 
 ### Results
 
-The data is split into three partitions: train, dev and test. The dev and test partitions are then use test the model, and for the case of the LSTM models, the dev partition is also used to track the best model.
+The data is split into three partitions: train, dev and test. The dev and test partitions are then used to test the model, and for the case of the LSTM models, the dev partition is also used to track the best model.
 
 Since the used dataset is very unbalanced, accuracy is not a good measure to keep track of the model's performance. Therefore the product of the F1 scores of both classes is used. The F1 product is a much more representative metric, as it translates to making correct predictions in both classes (`true` and `satire`).
+
+The features used for the baseline models were the **BoW** features, as opposed to the **word embeddings** used to train the LSTM based models.
+
+The results of the experiments conducted are presented below:
 
 | Model                                       	| Dev Accuracy 	| Dev F1 Product 	| Test Accuracy 	| Test F1 Product 	|
 |---------------------------------------------	|--------------	|----------------	|---------------	|-----------------	|
@@ -154,14 +160,39 @@ Since the used dataset is very unbalanced, accuracy is not a good measure to kee
 | SVM                                         	| 0.940        	| 0.640          	| 0.920         	| 0.455           	|
 | SVM + lemmatization                         	| 0.941        	| 0.650          	| 0.919         	| 0.467           	|
 | SVM + lemmatization + tfidf                 	| 0.970        	| 0.752          	| 0.965         	| 0.565           	|
-| Logistic Regression                         	| 0.974        	| 0.785          	| **0.977**     	| **0.734**       	|
-| Logistic Regression + lemmatization         	| 0.974        	| 0.785          	| 0.975         	| 0.705           	|
+| Logistic Regression                         	| **0.974**    	| 0.785          	| **0.977**     	| **0.734**       	|
+| Logistic Regression + lemmatization         	| **0.974**    	| 0.785          	| 0.975         	| 0.705           	|
 | Logistic Regression + lemmatization + tfidf 	| 0.962        	| 0.660          	| 0.966         	| 0.533           	|
 | LSTM                                        	| 0.959        	| 0.735          	| 0.947         	| 0.626           	|
 | LSTM + pre-trained embeddings               	| 0.971        	| 0.780          	| 0.970          | 0.656           	|
 | BiLSTM                                      	| 0.970        	| **0.787**      	| 0.952         	| 0.589           	|
 | BiLSTM + pre-trained embeddings             	| 0.970        	| 0.780          	| 0.961         	| 0.622           	|
 
-### Conclusions
+From the results obtained, it is concluded that the simpler models, overall, perform better than the more complex LSTM model. This can be explained by the low amounts of data in our training set, as deep learning approaches are very data hungry. Despite this fact, the LSTM based model reaches comparable performances to the best model, the Logistic Regression, and it is the best performing model in the dev set. However, it is clear that the LSTMs are overfitting, as there's a considerable gap between the performance of dev and test. Further hyperparameter search could have been conducted to achieve better results, but considering the scope of this project, only a limited search was performed.
 
-### Future work
+Having a simple model such as Logistic Regression to tackle a problem has a lot of advantages over, more sophisticated, deep learning approaches. It is much faster to train, corresponding to a small fraction of an LSTM training period. It is also possible to visualize the features that affect the model the most, as the model's parameters are a one dimensional vector, opposed to a deep learning model which is more of a "black box" due the large number of high dimensional parameters. This way, a logistic regression model is much more "explainable" than an LSTM model.
+
+The top 10 most relevant features of our best performing model were analyzed and are presented below:
+
+| Token 	| Weight 	|
+|-------	|--------	|
+| !     	| 0.629  	|
+| '     	| 0.541  	|
+| Bush  	| 0.514  	|
+| $     	| 0.448  	|
+| *     	| 0.430  	|
+| Mr    	| 0.428  	|
+| we    	| 0.425  	|
+| my    	| 0.402  	|
+| you   	| 0.394  	|
+| in    	| 0.382  	|
+
+This can be interpreted as satire detection being correlated with the occurance of exclamations, quotes, references to first and second person singular and articles refering to Bush. The latter, is tied to the time period of the corpus extraction.
+
+### Conclusions and Future Work
+
+Different models were trained with the scope of satire identification in text documents, ranging from classical approaches to deep learning techniques. The problem was tackled as a simple NLP classification task, and common feature extraction techniques were used and lead to a relatively performant model in the provided dataset, with 97.7% accuracy and 0.734 F1 product score obtained in the test set.
+
+Although the model chosen performs well in the used data set, it is not expected that this model perform as well in real world data, as satire detection is tied to several other sub-problems such as irony detection and tone identification, which our model wont be able to deal with, especially if these are tied to unknown tokens. 
+
+To improve results, it would be interesting to add tools such as slang identification and linguistic features such as POS tags to identify wrinting styles tied to satire. In addition, the deep learning could take advantage of the structure of the data and process paragraphs and sentences separately. It would be interesting to use an hierachical attention layer to make the model focus on specific zones of the document, which have satirical cues, as not all paragraphs are satire.
