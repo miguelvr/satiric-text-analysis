@@ -142,6 +142,10 @@ The model is trained for about 30 epochs with GPU accelaration using an ADAM opt
 
 ### Results
 
+The data is split into three partitions: train, dev and test. The dev and test partitions are then use test the model, and for the case of the LSTM models, the dev partition is also used to track the best model.
+
+Since the used dataset is very unbalanced, accuracy is not a good measure to keep track of the model's performance. Therefore the product of the F1 scores of both classes is used. The F1 product is a much more representative metric, as it translates to making correct predictions in both classes (`true` and `satire`).
+
 | Model                                       	| Dev Accuracy 	| Dev F1 Product 	| Test Accuracy 	| Test F1 Product 	|
 |---------------------------------------------	|--------------	|----------------	|---------------	|-----------------	|
 | Naive Bayes	                                 | 0.964	        | 0.687	          | 0.960	         | 0.457            |
@@ -150,13 +154,13 @@ The model is trained for about 30 epochs with GPU accelaration using an ADAM opt
 | SVM                                         	| 0.940        	| 0.640          	| 0.920         	| 0.455           	|
 | SVM + lemmatization                         	| 0.941        	| 0.650          	| 0.919         	| 0.467           	|
 | SVM + lemmatization + tfidf                 	| 0.970        	| 0.752          	| 0.965         	| 0.565           	|
-| Logistic Regression                         	| 0.974        	| **0.785**      	| 0.977         	| **0.734**       	|
-| Logistic Regression + lemmatization         	| 0.974        	| **0.785**      	| 0.975         	| 0.705           	|
+| Logistic Regression                         	| 0.974        	| 0.785          	| **0.977**     	| **0.734**       	|
+| Logistic Regression + lemmatization         	| 0.974        	| 0.785          	| 0.975         	| 0.705           	|
 | Logistic Regression + lemmatization + tfidf 	| 0.962        	| 0.660          	| 0.966         	| 0.533           	|
-| LSTM                                        	|              	|                	|               	|                 	|
-| LSTM + pre-trained embeddings               	|              	|                	|               	|                 	|
-| BiLSTM                                      	|              	|                	|               	|                 	|
-| BiLSTM + pre-trained embeddings             	|              	|                	|               	|                 	|
+| LSTM                                        	| 0.959        	| 0.735          	| 0.947         	| 0.626           	|
+| LSTM + pre-trained embeddings               	| 0.971        	| 0.780          	| 0.970          | 0.656           	|
+| BiLSTM                                      	| 0.970        	| **0.787**      	| 0.952         	| 0.589           	|
+| BiLSTM + pre-trained embeddings             	| 0.970        	| 0.780          	| 0.961         	| 0.622           	|
 
 ### Conclusions
 
